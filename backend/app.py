@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify, send_file
 import mysql.connector
 from mysql.connector import Error
 import os
+from flask import Flask, send_from_directory
 
 # --- Flask App Configuration ---
 app = Flask(__name__)
@@ -103,7 +104,7 @@ init_db()
 @app.route('/')
 def serve_index():
     try:
-        return send_file('index.html')
+        return send_from_directory("static", "index.html")
     except FileNotFoundError:
         return "index.html not found", 404
 
