@@ -5,12 +5,11 @@ services:
     build: ./backend
     container_name: backend-app
     ports:
-      - "5000:5000"
-    networks:
-      - app-network
+      - "8080:5000"
+    env_file: .env
     volumes:
       - ./backend:/app
-      - ./frontend:/app/static  # mount frontend files into backend
+      - ./frontend:/app/static  # Serve frontend static files from backend
     restart: unless-stopped
 
   frontend:
@@ -18,10 +17,10 @@ services:
     container_name: frontend-app
     ports:
       - "80:80"
-    networks:
-      - app-network
+    depends_on:
+      - backend
     restart: unless-stopped
 
 networks:
-  app-network:
+  default:
     driver: bridge
