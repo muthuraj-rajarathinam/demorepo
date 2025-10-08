@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy app code
 COPY . .
-
+COPY ../frontend /app/static
 # Environment variables will be injected from Terraform (via user data)
 EXPOSE 8080
 
