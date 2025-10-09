@@ -394,7 +394,7 @@
   <div class="cart" id="cart">
     <h3>Your Cart</h3>
     <ul id="cart-items"></ul>
-    <span class="cart-total" id="cart-total">Total: $0.00</span>
+    <span class="cart-total" id="cart-total">Total: bash.00</span>
     <button onclick="checkout()">Checkout</button>
   </div>
 
@@ -403,7 +403,8 @@
   </footer>
 
   <script>
-  const API_BASE_URL = '__BACKEND_ALB_URL__'; // CodePipeline will replace this with actual ALB DNS
+  // --- API Base URL Placeholder (to be replaced by CodePipeline during build) ---
+  const API_BASE_URL = 'http://3tierapp-alb-1636069075.ap-south-1.elb.amazonaws.com'; // CodePipeline will replace this with actual ALB DNS
 
   // --- Global State for Products and Cart ---
   let allProducts = [];
@@ -412,7 +413,7 @@
   // --- Custom Cursor & GSAP/Three.js logic unchanged ---
   const cursor = document.getElementById('cursor');
   document.addEventListener('mousemove', e => {
-    cursor.style.transform = `translate(${e.clientX - 16}px,${e.clientY - 16}px)`;
+    cursor.style.transform = ;
   });
 
   function setupHoverEffects() {
@@ -433,10 +434,10 @@
     if (loadingEl) loadingEl.textContent = "Connecting to Elegance Chocolat server...";
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/products`);
+      const response = await fetch();
       
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error();
       }
 
       const data = await response.json();
@@ -467,7 +468,7 @@
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/checkout`, {
+      const response = await fetch(, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: cart }) 
@@ -476,11 +477,11 @@
       const confirmation = await response.json();
 
       if (response.ok) {
-        alert(`Order Placed Successfully! 🎉\nOrder ID: ${confirmation.orderId}\nStatus: ${confirmation.status}\nFinal Total: $${confirmation.total.toFixed(2)}`);
+        alert();
         cart = [];
         updateCart();
       } else {
-        alert(`Checkout failed: ${confirmation.message || 'Server Error'}`);
+        alert();
       }
     } catch (error) {
       console.error("Checkout process failed:", error);
