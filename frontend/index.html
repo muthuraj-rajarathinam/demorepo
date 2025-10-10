@@ -434,10 +434,10 @@
     if (loadingEl) loadingEl.textContent = "Connecting to Elegance Chocolat server...";
 
     try {
-      const response = await fetch();
+      const response = await fetch(`${API_BASE_URL}/api/products`);
       
       if (!response.ok) {
-        throw new Error();
+        throw new Error("Bad response from backend");
       }
 
       const data = await response.json();
@@ -468,7 +468,7 @@
     }
 
     try {
-      const response = await fetch(, {
+      const response = await fetch(`${API_BASE_URL}/api/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: cart }) 
