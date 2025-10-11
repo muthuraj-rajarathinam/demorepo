@@ -2,27 +2,19 @@ version: "3.9"
 
 services:
   backend:
-    build: 
-     context: .
-     dockerfile: ./backend/Dockerfile
+    build: ./backend
     container_name: backend-app
     ports:
-      - "8080:8080"
-    env_file: .env
+      - "80:8080"  # Map directly to port 80
+    networks:
+      - app-network
     volumes:
       - ./backend:/app
-      - ./frontend:/app/static  # Serve frontend static files from backend
+      - ./frontend:/app/static
     restart: unless-stopped
 
-  frontend:
-    build: ./frontend
-    container_name: frontend-app
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
+# Remove the frontend service entirely
 
 networks:
-  default:
+  app-network:
     driver: bridge
