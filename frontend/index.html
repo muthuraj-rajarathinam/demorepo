@@ -350,6 +350,93 @@
       .gallery img, .category-card img { width: 60px; height: 60px;}
       .cart { font-size: 0.9rem;}
     }
+
+    /* --- NEW MODAL STYLES FOR ORDER CONFIRMATION --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8); /* Dark background */
+        display: none; /* Hidden by default */
+        justify-content: center;
+        align-items: center;
+        z-index: 10000; /* Above everything else */
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+        opacity: 1;
+    }
+    
+    .modal-content {
+        background: var(--cream); /* Light background for contrast */
+        color: var(--deep-brown);
+        padding: 40px;
+        border-radius: 18px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        max-width: 450px;
+        width: 90%;
+        text-align: center;
+        border: 4px solid var(--gold);
+        transform: scale(0.9);
+        transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); /* Spring-like transition */
+    }
+
+    .modal-overlay.active .modal-content {
+        transform: scale(1);
+    }
+    
+    .modal-content h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.4rem;
+        color: var(--luxury-brown);
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+
+    .modal-content .gold-icon {
+        color: var(--gold);
+        font-size: 2.5rem;
+        display: block;
+        margin-bottom: 15px;
+    }
+    
+    #modal-details p {
+        margin: 10px 0;
+        font-size: 1.1em;
+        display: flex;
+        justify-content: space-between;
+        padding-bottom: 5px;
+        border-bottom: 1px dashed #ccc;
+    }
+    
+    #modal-details strong {
+        font-weight: 700;
+        color: var(--deep-brown);
+    }
+    
+    #modal-total {
+        color: var(--gold);
+        font-size: 1.4em;
+        font-weight: bold;
+    }
+    
+    .modal-content .cta {
+        margin-top: 25px;
+        /* Inherits styles from .hero .cta but we make it a primary button */
+        background: var(--luxury-brown);
+        color: var(--cream);
+        padding: 0.8rem 2rem;
+    }
+    .modal-content .cta:hover {
+        background: var(--gold);
+        color: var(--deep-brown);
+    }
+    /* --- END NEW MODAL STYLES --- */
   </style>
 </head>
 <body>
@@ -357,7 +444,7 @@
   <canvas id="choco-canvas"></canvas>
   
   <div class="hero">
-    <h1>Élégance Chocolat</h1>
+    <h1>Élégance Chocolate</h1>
     <p>
       Discover the world of luxury chocolate. Explore our curated collection of artisanal chocolates, crafted with passion and the finest ingredients. Indulge in a symphony of flavors, textures, and visual delight.
     </p>
@@ -394,110 +481,296 @@
   <div class="cart" id="cart">
     <h3>Your Cart</h3>
     <ul id="cart-items"></ul>
-    <span class="cart-total" id="cart-total">Total: bash.00</span>
+    <span class="cart-total" id="cart-total">Total: $0.00</span>
     <button onclick="checkout()">Checkout</button>
   </div>
 
   <footer>
-    &copy; 2025 Élégance Chocolat &mdash; Crafted for Luxury
+    &copy; 2025 Élégance Chocolate &mdash; Crafted for Luxury
   </footer>
 
+  <div id="order-modal" class="modal-overlay">
+      <div class="modal-content">
+          <span class="gold-icon">★</span> 
+          <h2>Order Confirmed!</h2>
+          <div id="modal-details">
+              <p><strong>Order ID:</strong> <span id="modal-order-id"></span></p>
+              <p><strong>Status:</strong> <span id="modal-status"></span></p>
+              <p><strong>Final Total:</strong> <span id="modal-total"></span></p>
+          </div>
+          <button onclick="closeModal()" class="cta">Acknowledge</button>
+      </div>
+  </div>
   <script>
-  // --- API Base URL Placeholder (to be replaced by CodePipeline during build) ---
-  const API_BASE_URL = '__BACKEND_ALB_URL__'; // CodePipeline will replace this with actual ALB DNS
+    // --- Global State for Products and Cart ---
+    let allProducts = [];
+    // Cart stores items as { id: 'product-id', qty: 1 }
+    let cart = []; 
 
-  // --- Global State for Products and Cart ---
-  let allProducts = [];
-  let cart = []; 
-
-  // --- Custom Cursor & GSAP/Three.js logic unchanged ---
-  const cursor = document.getElementById('cursor');
-  document.addEventListener('mousemove', e => {
-    cursor.style.transform = ;
-  });
-
-  function setupHoverEffects() {
-    document.querySelectorAll('.cta, .product-card button, .cart button').forEach(el => {
-      el.addEventListener('mouseenter', () => cursor.style.transform += ' scale(1.7)');
-      el.addEventListener('mouseleave', () => cursor.style.transform = cursor.style.transform.replace(' scale(1.7)', ''));
+    // --- Custom Cursor Logic (Unchanged) ---
+    const cursor = document.getElementById('cursor');
+    document.addEventListener('mousemove', e => {
+      cursor.style.transform = `translate(${e.clientX - 16}px,${e.clientY - 16}px)`;
     });
-  }
-  document.addEventListener('DOMContentLoaded', setupHoverEffects);
+    // Cursor Scale on Hover
+    function setupHoverEffects() {
+      document.querySelectorAll('.cta, .product-card button, .cart button').forEach(el => {
+        el.addEventListener('mouseenter', () => cursor.style.transform += ' scale(1.7)');
+        el.addEventListener('mouseleave', () => cursor.style.transform = cursor.style.transform.replace(' scale(1.7)', ''));
+      });
+    }
+    document.addEventListener('DOMContentLoaded', setupHoverEffects);
 
-  // --- Render Functions Unchanged ---
-  function renderCategories(categoriesData) { /* unchanged */ }
-  function renderProducts(productsData) { /* unchanged */ }
+    // --- GSAP Scroll Animations (Unchanged) ---
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.utils.toArray(".section, .hero").forEach((block) => {
+      gsap.from(block, {
+        opacity: 0,
+        y: 80,
+        duration: 1.1,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: block,
+          start: "top 90%",
+        }
+      });
+    });
 
-  // --- CORE CHANGE: Fetch Initial Data from ALB Backend ---
-  async function fetchInitialData() {
-    const loadingEl = document.getElementById('loading-products');
-    if (loadingEl) loadingEl.textContent = "Connecting to Elegance Chocolat server...";
+    // --- 3D Chocolate Visual (Three.js) (Unchanged) ---
+    let renderer, scene, camera, choco, animateId;
+    function initChoco() {
+      const canvas = document.getElementById('choco-canvas');
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.z = 3.2;
+      const geometry = new THREE.BoxGeometry(1.2, 1.2, 1.2, 32, 32, 32);
+      const material = new THREE.MeshPhongMaterial({ color: 0x4e2e1e, shininess: 80, specular: 0xd4af37 });
+      choco = new THREE.Mesh(geometry, material);
+      scene.add(choco);
+      const goldMat = new THREE.MeshPhongMaterial({ color: 0xd4af37, shininess: 120, opacity: 0.3, transparent: true });
+      const gold = new THREE.Mesh(new THREE.SphereGeometry(0.7, 32, 32), goldMat);
+      gold.position.set(0.5, 0.5, 0.5);
+      scene.add(gold);
+      const light = new THREE.PointLight(0xd4af37, 2.5, 100);
+      light.position.set(2, 2, 2);
+      scene.add(light);
+      animateChoco();
+    }
+    function animateChoco() {
+      animateId = requestAnimationFrame(animateChoco);
+      choco.rotation.y += 0.004;
+      choco.rotation.x += 0.002;
+      renderer.render(scene, camera);
+    }
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    });
+    document.addEventListener('DOMContentLoaded', initChoco);
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/products`);
+    // --- Data Rendering (Unchanged) ---
+    function renderCategories(categoriesData) {
+      const catList = document.getElementById('category-list');
+      catList.innerHTML = '';
+      categoriesData.forEach(cat => {
+        const el = document.createElement('div');
+        el.className = 'category-card';
+        el.setAttribute('data-id', cat.id);
+        el.innerHTML = `
+          <img src="${cat.img}" alt="${cat.name}">
+          <h3>${cat.name}</h3>
+          <ul>${cat.flavors.map(f => `<li>${f}</li>`).join('')}</ul>
+        `;
+        catList.appendChild(el);
+      });
+    }
+
+    function renderProducts(productsData) {
+      allProducts = productsData;
+      const prodList = document.getElementById('product-list');
+      prodList.innerHTML = '';
+      allProducts.forEach(prod => {
+        const el = document.createElement('div');
+        el.className = 'product-card';
+        el.id = `product-${prod.id}`;
+        el.innerHTML = `
+          <img src="${prod.img}" alt="${prod.name}">
+          <h4>${prod.name}</h4>
+          <div class="flavor">${prod.flavor}</div>
+          <span class="price">$${prod.price.toFixed(2)}</span>
+          <button onclick="addToCart('${prod.id}', this)">Add to Cart</button>
+        `;
+        prodList.appendChild(el);
+      });
+      setupHoverEffects(); // Re-apply cursor hover effects
+    }
+
+    // --- CORE CHANGE 1: Fetch Initial Data from API (Unchanged) ---
+    async function fetchInitialData() {
+      const loadingEl = document.getElementById('loading-products');
+      if (loadingEl) loadingEl.textContent = "Connecting to Elegance Chocolat server...";
       
-      if (!response.ok) {
-        throw new Error("Bad response from backend");
-      }
+      try {
+        // **3-Tier Hook:** Fetch product catalog from Python/Flask backend
+        const response = await fetch('/api/products');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}. Backend might be unreachable.`);
+        }
+        
+        const data = await response.json();
 
-      const data = await response.json();
-      renderCategories(data.categories);
-      renderProducts(data.products);
+        renderCategories(data.categories);
+        renderProducts(data.products);
+        if (loadingEl) loadingEl.style.display = 'none';
 
-      if (loadingEl) loadingEl.style.display = 'none';
-
-    } catch (error) {
-      console.error("Error fetching initial data:", error);
-      if(loadingEl) {
-        loadingEl.textContent = "Failed to load products. Backend (Flask) unreachable at ALB.";
-        loadingEl.style.color = 'red';
+      } catch (error) {
+        console.error("Error fetching initial data:", error);
+        if(loadingEl) {
+            loadingEl.textContent = "Failed to load products. Backend (Flask) might not be running or reachable at port 5000.";
+            loadingEl.style.color = 'red';
+        }
       }
     }
-  }
 
-  // --- Cart Functionality (Unchanged) ---
-  async function addToCart(productId, btn) { /* unchanged */ }
-  function updateCart() { /* unchanged */ }
-  function removeFromCart(productId) { /* unchanged */ }
+    // --- Cart Functionality (Unchanged) ---
 
-  // --- CORE CHANGE: Checkout to ALB Backend ---
-  async function checkout() {
-    if (cart.length === 0) {
-      alert("Your cart is empty!");
-      return;
-    }
+    async function addToCart(productId, btn) {
+      const product = allProducts.find(p => p.id === productId);
+      if (!product) return;
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cart }) 
+      const foundIndex = cart.findIndex(item => item.id === productId);
+
+      if (foundIndex !== -1) {
+        cart[foundIndex].qty++;
+      } else {
+        cart.push({ id: productId, qty: 1 });
+      }
+
+      // Fly-to-cart animation
+      const productCard = btn.closest('.product-card');
+      const cartEl = document.getElementById('cart');
+      const flyEl = productCard.querySelector('img').cloneNode();
+      flyEl.style.cssText = `
+        position: fixed;
+        width: 80px; height: 80px;
+        z-index: 10000;
+        top: ${productCard.offsetTop + (productCard.offsetHeight / 2) - window.scrollY}px;
+        left: ${productCard.offsetLeft + (productCard.offsetWidth / 2)}px;
+        border-radius: 50%;
+        pointer-events: none;
+        transition: none;
+      `;
+      document.body.appendChild(flyEl);
+
+      const cartRect = cartEl.getBoundingClientRect();
+
+      gsap.to(flyEl, {
+        x: cartRect.left - flyEl.offsetLeft + 10,
+        y: cartRect.top - flyEl.offsetTop + 10,
+        scale: 0.2,
+        opacity: 0.5,
+        duration: 0.9,
+        ease: "power1.inOut",
+        onComplete: () => {
+          flyEl.remove();
+          gsap.fromTo(cartEl, { scale: 1.05 }, { scale: 1, duration: 0.2, ease: "back.out(1.7)" });
+        }
       });
       
-      const confirmation = await response.json();
-
-      if (response.ok) {
-        alert();
-        cart = [];
-        updateCart();
-      } else {
-        alert();
-      }
-    } catch (error) {
-      console.error("Checkout process failed:", error);
-      alert("A network error occurred during checkout. Please ensure the backend is running and reachable.");
+      updateCart();
     }
-  }
 
-  window.addToCart = addToCart;
-  window.removeFromCart = removeFromCart;
-  window.checkout = checkout;
+    function updateCart() {
+      const cartDiv = document.getElementById('cart');
+      const items = document.getElementById('cart-items');
+      items.innerHTML = '';
+      let total = 0;
 
-  document.addEventListener('DOMContentLoaded', fetchInitialData);
-  window.addEventListener('scroll', () => {
-    if (cart.length > 0) document.getElementById('cart').classList.add('active');
-  });
-</script>
+      if (cart.length === 0) {
+        cartDiv.classList.remove('active');
+        return;
+      }
 
+      cartDiv.classList.add('active');
+
+      cart.forEach(item => {
+        const prod = allProducts.find(p => p.id === item.id);
+        if (!prod) return;
+
+        total += prod.price * item.qty;
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span>${prod.name} x${item.qty}</span>
+          <button onclick="removeFromCart('${item.id}')">✕</button>
+        `;
+        items.appendChild(li);
+      });
+
+      document.getElementById('cart-total').textContent = `Total: $${total.toFixed(2)}`;
+    }
+
+    function removeFromCart(productId) {
+      cart = cart.filter(item => item.id !== productId);
+      updateCart();
+    }
+    
+    // --- NEW MODAL FUNCTION ---
+    function closeModal() {
+        document.getElementById('order-modal').classList.remove('active');
+    }
+    window.closeModal = closeModal;
+
+    // --- CORE CHANGE 2: Checkout Function with API Call and MODAL Handling ---
+    async function checkout() {
+      if (cart.length === 0) {
+        alert("Your cart is empty!");
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: cart }) 
+        });
+        
+        const confirmation = await response.json();
+
+        if (response.ok) {
+          // 1. Populate Modal with data
+          document.getElementById('modal-order-id').textContent = confirmation.orderId;
+          document.getElementById('modal-status').textContent = confirmation.status;
+          document.getElementById('modal-total').textContent = `$${confirmation.total.toFixed(2)}`;
+          
+          // 2. Show the custom modal
+          document.getElementById('order-modal').classList.add('active');
+
+          // 3. Clear the cart
+          cart = [];
+          updateCart();
+        } else {
+          // Failure (use alert for errors outside of success path)
+          alert(`Checkout failed: ${confirmation.message || 'Server Error'}`);
+        }
+      } catch (error) {
+        console.error("Checkout process failed:", error);
+        alert("A network error occurred during checkout. Please ensure the backend is running and reachable.");
+      }
+    }
+    
+    // Expose functions to the window 
+    window.addToCart = addToCart;
+    window.removeFromCart = removeFromCart;
+    window.checkout = checkout;
+
+    document.addEventListener('DOMContentLoaded', fetchInitialData);
+    window.addEventListener('scroll', () => {
+      if (cart.length > 0) document.getElementById('cart').classList.add('active');
+    });
+  </script>
 </body>
 </html>
