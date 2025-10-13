@@ -600,7 +600,8 @@
           <img src="${prod.img}" alt="${prod.name}">
           <h4>${prod.name}</h4>
           <div class="flavor">${prod.flavor}</div>
-          <span class="price">$${prod.price.toFixed(2)}</span>
+          <span class="price">$${parseFloat(prod.price).toFixed(2)}</span>
+
           <button onclick="addToCart('${prod.id}', this)">Add to Cart</button>
         `;
         prodList.appendChild(el);
